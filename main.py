@@ -41,12 +41,17 @@ def main():
         if finger_tips is not None and open_fingers is not None:
             # ---- Moving mouse
             if open_fingers[1] == 1 and sum(open_fingers) == 1:
-                finger = 1
-                # finger_tips[finger], finger_tips[finger]
-                x, y = finger_tips[finger]
+                # Here 1 represents the index finger
+                x, y = finger_tips[1]
+                
                 mouseX, mouseY = mouse.get_position()
+                # Interpolate converts a range of values of different range of values
+                # MATHS!!!
                 x = interpolate(0, CAM_WIDTH, 0, WIN_WIDTH, x)
                 y = interpolate(0, CAM_HEIGHT, 0, WIN_HEIGHT, y)
+                # In camera we have mirror image of ourselves  therefore we must 
+                # mirror x
+                x = WIN_WIDTH-x
 
                 print(x, y, mouseX, mouseY)
                 mouse.drag(mouseX, mouseY, x, y ,absolute=True, duration=0.0001)
