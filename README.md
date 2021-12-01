@@ -4,7 +4,7 @@ Based on the paper published by Hindawi, Deep learning based virtual mouse this 
 
 ## Demo
 
-![Image](https://github.com/Sarath191181208/paint/blob/master/images/Screenshot.png)
+![Image](https://github.com/Sarath191181208/mouse-tracking-using-Hand/blob/master/images/Screenshot.png)
 
 ## Features
 
