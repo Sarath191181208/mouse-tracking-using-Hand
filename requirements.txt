@@ -1,0 +1,4 @@
+mediapipe
+opencv-python
+mouse
+# install rust up https://rustup.rs/

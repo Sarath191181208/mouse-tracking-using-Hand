@@ -1,6 +1,6 @@
 import cv2
 import mediapipe as mp
-from colorama import Fore
+from colorama import Fore, Style
 
 
 class HandDetector:
@@ -18,7 +18,7 @@ class HandDetector:
         ''' 
         :returns a list containing which fingers are open
         :param lmList ! List containing positon of fingers
-        :param count = if true return return the number of open fingers
+        :param count = if true return the number of open fingers
         '''
         fingers = []
         if len(lmList) != 0:
@@ -40,6 +40,8 @@ class HandDetector:
     def findHands(self, img, draw:bool=False):
         '''
             :return the image of the hand
+            :param img an opencv image
+            :param draw:bool if landmarks are drawn or not
         '''
         imgRBG = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.results = self.hands.process(imgRBG)
@@ -55,57 +57,104 @@ class HandDetector:
         '''
         :returns  an array containing the landmark List of points of hands with 0 having id , 1,2 respectively have x,y
 
-        :parameter img = ! Must its an image from openCV ,
-        :parameter handNo = 0 if you are tracking more than one hands
-        :parameter draw = default : True if you neeed to draw points on screen
+        :param img = ! Must its an image from openCV ,
+        :param handNo = 0 if you are tracking more than one hands
+        :param draw = default : True if you neeed to draw points on screen
         '''
         lmList = []
+        boundaryBox = []
+        x_points,y_points = [],[]
         if self.results.multi_hand_landmarks:
             myHand = self.results.multi_hand_landmarks[handNo]
 
             for Id, lm in enumerate(myHand.landmark):
                 h, w, c = img.shape
                 cx, cy = int(lm.x * w), int(lm.y * h)
+                x_points.append(cx)
+                y_points.append(cy)
                 lmList.append([id, cx, cy])
 
                 if draw:
                     # to fill the dot
                     # cv2.circle(img, (cx, cy), 10, (255, 0, 255), cv2.FILLED)
                     # to stroke a circle 
+
                     cv2.circle(img, (cx, cy), 10, (255, 0, 255), 2)
 
                 if showNumbers:
                     fontScale = 0.6
                     # here len(lmList)-1 is the text
                     cv2.putText(img,str(len(lmList)-1), (cx,cy), cv2.FONT_HERSHEY_SIMPLEX,fontScale, color = (0,0,0), thickness = 3)
+        if len(x_points) > 0:
+            x_min,x_max = min(x_points), max(x_points)
+            y_min,y_max = min(y_points), max(y_points)
+            width,height = x_max - x_min, y_max- y_min
+            boundaryBox.append(x_min)
+            boundaryBox.append(y_min)
+            boundaryBox.append(width)
+            boundaryBox.append(height)
+            if draw:
+                cv2.rectangle(img, (x_min - 20, y_min - 20),
+                (x_min + width + 20, y_min + height + 20),(0, 255, 0), 2)
+        return lmList,boundaryBox
 
-        return lmList or None
-
-    def findFinger(self,img,finger,handNo = 0,draw = True,drawHandPoints = False,drawHandNumbers = False):
+    def findFinger(self,img,finger,handNo = 0,draw = True,drawHandPoints = False,drawHandNumbers = False,on = None):
         '''
             : returns the x,y coordinates of the given finger 
 
             :param img = openCV img
             :param finger = the finger you want position of
             :param handNo = 0 if you tracking more than one hand
+            :param on = openCV img the surface on which you whish to draw
         '''
-        list = self.findPosition(img,handNo,drawHandPoints,drawHandNumbers)
+        # findPosition also returns boundary box
+        list, _ = self.findPosition(img,handNo,drawHandPoints,drawHandNumbers)
         finger += 1
         finger *= 4
-        if list != None:
-            if draw:
+        if len(list) > 0:
+            if draw and on is None:
                 cv2.circle(img, (list[finger][1], list[finger][2]), 10, (255, 0, 255), 3)
-            return  (list[finger][1], list[finger][2])
+            else:
+                cv2.circle(on, (list[finger][1], list[finger][2]), 5, (196, 144, 228)[::-1], 3)
+            return  [list[finger][1], list[finger][2]]
+    
+    def get_finger_tips(self, finger_pnts, no_of_fingers=5, draw=False, img=None):
+        '''
+            :returns an array containing cords of finger tips 
+            :param finger_pnts the lmList of fingers
+            :param no_of_fingers the no of fingers you want to track 
+            :param draw:bool if you want to draw circles around the fingers or not
+            :param img:OpenCv image the image you want to draw on
+        '''
+        finger_idx = 1
+        finger_tips = []
+
+        if len(finger_pnts) == 0:
+            return None
+
+        for _ in range(no_of_fingers):
+            func, x, y = finger_pnts[finger_idx*4]
+            finger_tips.append((x, y))
+            finger_idx+=1
+        if draw :
+            if img is None:
+                print(f"{Fore.RED} Image is None can't draw on it! {Style.RESET_ALL}")
+                return finger_tips
+            for finger in finger_tips:
+                    cv2.circle(img, (finger[0], finger[1]), 10, (0, 0, 255), 3)
+
+        return finger_tips
 
 
 def main():
     detector = HandDetector(detectionCon=0.8)
     # 0 if you want to use your web cam 1 if you use external webcam ex:phone
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     while True:
         success, img = cap.read()
         img = detector.findHands(img,draw=True)
-        finger_pos = detector.findFinger(img,finger = 1,draw=False,drawHandPoints = False) 
+
+        finger_pos = detector.findFinger(img,finger = 1,draw=True,drawHandPoints = False) 
         
         print(f'{Fore.GREEN}{finger_pos}')
 
