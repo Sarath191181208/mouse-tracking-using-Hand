@@ -92,11 +92,13 @@ def click(click_btn, x1, y1, x2, y2, img):
     return clicked
 
 def drag(delta_y):
+    if delta_y is None:
+        return
     mouseX, mouseY = mouse.get_position()
     mouse.drag(mouseX, mouseY, mouseX, delta_y ,absolute=True, duration=0)
 
 # These are all the gestures of the project
-def gestures(thumb_finger, index_finger, mid_finger, num_open_fingers):
+def gestures(thumb_finger, index_finger, mid_finger, num_open_fingers, img):
     # ----  Moving mouse -----
     if index_finger.is_open and num_open_fingers==1:
         x, y = index_finger.x, index_finger.y
@@ -137,7 +139,7 @@ def main():
         finger_pnts, boundary_box = detector.findPosition(img, handNo=0, draw=False, showNumbers=False)
 
         # we are only observing the three fingers therefore cutting our array to 3 elements
-        finger_tips = detector.get_finger_tips(finger_pnts, no_of_fingers=3, draw=True, img=img)[:3]
+        finger_tips = detector.get_finger_tips(finger_pnts, no_of_fingers=3, draw=True, img=img)
         open_fingers = detector.countFingers(finger_pnts, count=False)[:3]
 
         # reduntant open_fingers check just for safety
@@ -148,7 +150,7 @@ def main():
             mid_finger   = utils.Finger(open_fingers[2], finger_tips[2])
 
             num_open_fingers = sum(open_fingers)
-            gestures(thumb_finger, index_finger, mid_finger, num_open_fingers)
+            gestures(thumb_finger, index_finger, mid_finger, num_open_fingers, img)
 
         cv2.imshow("Image", img)
         key = cv2.waitKey(1)
